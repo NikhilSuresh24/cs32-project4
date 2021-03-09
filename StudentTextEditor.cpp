@@ -281,7 +281,8 @@ int StudentTextEditor::getLines(int startRow, int numRows, std::vector<std::stri
 	}
 
 	// create copy of iterator to iterate through desired lines
-	int endRow = min(startRow + numRows, m_lines.size());
+	int endRow = (m_lines.size() < (startRow + numRows)) ? m_lines.size() : (startRow + numRows);
+	// int endRow = min(startRow + numRows, m_lines.size());
 	auto rowCopy = m_editRowIter;
 	std::advance(rowCopy, startRow - m_editRow); // get to startRow TODO:is this allowed?
 

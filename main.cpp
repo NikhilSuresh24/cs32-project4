@@ -4,7 +4,7 @@
 #include <string>
 
 // Do not change anything in this file other than these initializer values
-const std::string DICTIONARYPATH = "/Users/nikhilsuresh/Desktop/freshman/winter/cs32/project4/Wurd/dictionary.txt";
+const std::string DICTIONARYPATH = "dictionary.txt"; // /Users/nikhilsuresh/Desktop/freshman/winter/cs32/project4/Wurd/
 const int FOREGROUND_COLOR = COLOR_WHITE;
 const int BACKGROUND_COLOR = COLOR_BLACK;
 const int HIGHLIGHT_COLOR  = COLOR_RED;

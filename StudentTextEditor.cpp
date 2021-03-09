@@ -38,6 +38,7 @@ bool StudentTextEditor::load(std::string file)
 	string line;
 	while (getline(infile, line))
 	{
+		// TODO: remove \r from the line
 		m_lines.push_back(line);
 	}
 

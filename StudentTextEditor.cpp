@@ -15,7 +15,6 @@ TextEditor *createTextEditor(Undo *un)
 StudentTextEditor::StudentTextEditor(Undo *undo)
 	: TextEditor(undo), m_lines({""}), m_editRowIter(m_lines.begin()), m_editRow(0), m_editCol(0) //TODO: if this doesn't work, just declare m_lines and iter in body
 {
-	// TODO
 }
 
 StudentTextEditor::~StudentTextEditor()
@@ -38,7 +37,11 @@ bool StudentTextEditor::load(std::string file)
 	string line;
 	while (getline(infile, line))
 	{
-		// TODO: remove \r from the line
+		// remove \r from the line
+		if (line[line.size() - 1] == '\r')
+		{
+			line.pop_back();
+		}
 		m_lines.push_back(line);
 	}
 
@@ -83,7 +86,7 @@ void StudentTextEditor::move(Dir dir)
 	{
 	case UP:
 		// if not on first line, move 1 line down
-		if (m_editRowIter != m_lines.begin())
+		if (m_editRow != 0)
 		{
 			--m_editRowIter;
 			--m_editRow;
@@ -92,20 +95,16 @@ void StudentTextEditor::move(Dir dir)
 
 	case DOWN:
 		// increment editRow, unless we are already at the end
-		//TODO: kinda jank, do i need to check this way, can't i use m_editRow?
-		if (++m_editRowIter == m_lines.end())
+		if (m_editRow != m_lines.size() - 1)
 		{
-			--m_editRowIter;
-		}
-		else
-		{
-			--m_editRow;
+			++m_editRowIter;
+			++m_editRow;
 		}
 		break;
 
 	case LEFT:
 		// if first row, first col, don't do anything
-		if (m_editRowIter == m_lines.begin() && m_editCol == 0)
+		if (m_editRow == 0 && m_editCol == 0)
 		{
 			break;
 		}
@@ -127,9 +126,9 @@ void StudentTextEditor::move(Dir dir)
 
 	case RIGHT:
 		// if we at the last row, last col, then do nothing
-		if (m_editCol == m_editRowIter->size() && ++m_editRowIter == m_lines.end())
+		if (m_editCol == m_editRowIter->size() && m_editRow == m_lines.size() - 1)
 		{
-			--m_editRowIter;
+			break;
 		}
 		// if at end of a line, move to next line
 		else if (m_editCol == m_editRowIter->size())
@@ -172,17 +171,15 @@ void StudentTextEditor::del()
 	// if at end of line, merge with next line
 	else if (m_editCol == m_editRowIter->size())
 	{
-		if (m_editRow != m_lines.size() - 1)
-		{
-			auto nextLine = ++m_editRowIter;
-			--m_editRowIter;
-			*m_editRowIter += *nextLine;
-			m_lines.erase(nextLine); //TODO: im pretty sure rowIter should not be invalidated
-		}
+		
+		auto nextLine = ++m_editRowIter;
+		--m_editRowIter;
+		*m_editRowIter += *nextLine;
+		m_lines.erase(nextLine); //TODO: im pretty sure rowIter should not be invalidated
 	}
 	else
 	{
-		m_editRowIter->erase(m_editCol); //TODO: make sure this deletes the right char
+		m_editRowIter->erase(m_editCol, 1); //TODO: make sure this deletes the right char
 	}
 
 	//TODO: UNDO obj tracking
@@ -213,7 +210,7 @@ void StudentTextEditor::backspace()
 	// else, delete char to left of editCol
 	else
 	{
-		m_editRowIter->erase(m_editCol - 1); //TODO: make sure this deletes the right char
+		m_editRowIter->erase(m_editCol - 1, 1);
 		--m_editCol;
 	}
 
@@ -248,8 +245,8 @@ void StudentTextEditor::enter()
 	// otherwise, make a new line for all chars from col - 1 to end, edit current row
 	else
 	{
-		string nextLine = m_editRowIter->substr(m_editCol - 1, string::npos);
-		*m_editRowIter = m_editRowIter->substr(0, m_editCol - 1);
+		string nextLine = m_editRowIter->substr(m_editCol, string::npos);
+		*m_editRowIter = m_editRowIter->substr(0, m_editCol);
 
 		// add new line, update row and col counters
 		m_editRowIter = m_lines.emplace(++m_editRowIter, nextLine);
@@ -273,7 +270,7 @@ int StudentTextEditor::getLines(int startRow, int numRows, std::vector<std::stri
 	{
 		return -1;
 	}
-	lines.clear(); //TODO: is this allowed for big o?
+	lines.clear();
 
 	// if startRow equal to size, nothing to be added to lines
 	if (startRow == m_lines.size())
@@ -283,7 +280,6 @@ int StudentTextEditor::getLines(int startRow, int numRows, std::vector<std::stri
 
 	// create copy of iterator to iterate through desired lines
 	int endRow = (m_lines.size() < (startRow + numRows)) ? m_lines.size() : (startRow + numRows);
-	// int endRow = min(startRow + numRows, m_lines.size());
 	auto rowCopy = m_editRowIter;
 	std::advance(rowCopy, startRow - m_editRow); // get to startRow TODO:is this allowed?
 

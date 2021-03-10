@@ -25,6 +25,7 @@ StudentSpellCheck::~StudentSpellCheck()
 
 bool StudentSpellCheck::load(std::string dictionaryFile)
 {
+	//TODO: Upper case only 
 	ifstream infile(dictionaryFile);
 	// dict could not be processed
 	if (!infile)

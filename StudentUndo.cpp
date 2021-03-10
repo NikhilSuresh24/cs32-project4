@@ -19,11 +19,21 @@ void StudentUndo::submit(const Action action, int row, int col, char ch)
 	if (!m_actions.empty())
 	{
 		Undoable *top = m_actions.top();
-		bool batchableAction = action == INSERT || action == DELETE;
+		bool deleteCond = action == DELETE && top->m_col == col;
+		bool backspaceCond = action == DELETE && top->m_col - 1 == col;
+		bool insertCond = action == INSERT && top->m_col + 1 == col;
 		// if batching, combine two actions
-		if (batchableAction && top->m_action == action && top->m_row == row && top->m_col == col)
+		if (top->m_action == action && top->m_row == row && (deleteCond || backspaceCond || insertCond))
 		{
-			text += top->m_text + ch;
+			if (backspaceCond)
+			{
+				text += ch + top->m_text;
+			}
+			else
+			{
+				text += top->m_text + ch;
+			}
+			// text += top->m_text + ch;
 			delete top;
 			m_actions.pop();
 		}
@@ -66,9 +76,23 @@ StudentUndo::Action StudentUndo::get(int &row, int &col, int &count, std::string
 	case SPLIT:
 		inverseAction = JOIN;
 		break;
+	// error case should never occur, just listed for switch statement completeness
 	case ERROR:
 		inverseAction = ERROR;
 		break;
+	}
+
+	// set count and col param
+	if (inverseAction == DELETE)
+	{
+		// starting pos to delete different from other inverses
+		count = top->m_text.size();
+		col = top->m_col - count;
+	}
+	else
+	{
+		count = 1;
+		col = top->m_col;
 	}
 
 	// set text param
@@ -81,9 +105,9 @@ StudentUndo::Action StudentUndo::get(int &row, int &col, int &count, std::string
 		text = "";
 	}
 
-	// set row and col
-	row = top->m_row; // TODO: is this right, do i need to check by different actions
-	col = top->m_col;
+	// set row
+	row = top->m_row; // universal for all actions
+
 
 	// pop top
 	delete top;

@@ -77,7 +77,9 @@ void StudentTextEditor::reset()
 	m_editRowIter = m_lines.begin();
 	m_editRow = 0;
 	m_editCol = 0;
-	//TODO: clear the undo state
+
+	// clear the undo state
+	getUndo()->clear();
 }
 
 void StudentTextEditor::move(Dir dir)
@@ -164,97 +166,26 @@ void StudentTextEditor::move(Dir dir)
 
 void StudentTextEditor::del()
 {
-	if (m_editRow == m_lines.size() - 1 && m_editCol == m_editRowIter->size())
-	{
-		return;
-	}
-	// if at end of line, merge with next line
-	else if (m_editCol == m_editRowIter->size())
-	{
-		
-		auto nextLine = ++m_editRowIter;
-		--m_editRowIter;
-		*m_editRowIter += *nextLine;
-		m_lines.erase(nextLine); //TODO: im pretty sure rowIter should not be invalidated
-	}
-	else
-	{
-		m_editRowIter->erase(m_editCol, 1); //TODO: make sure this deletes the right char
-	}
-
-	//TODO: UNDO obj tracking
+	// always inform undo
+	undoableDel(true);
 }
 
 void StudentTextEditor::backspace()
 {
-	// if at top of doc, don't do anything
-	if (m_editRow == 0 && m_editCol == 0)
-	{
-		return;
-	}
-
-	// if at first col, merge with line above
-	else if (m_editCol == 0)
-	{
-		// update row and col trackers
-		auto lineCopy = m_editRowIter;
-		--m_editRowIter;
-		--m_editRow;
-		m_editCol = m_editRowIter->size();
-
-		// merge lines and erase bottom line
-		*m_editRowIter += *lineCopy;
-		m_lines.erase(lineCopy);
-	}
-
-	// else, delete char to left of editCol
-	else
-	{
-		m_editRowIter->erase(m_editCol - 1, 1);
-		--m_editCol;
-	}
-
-	//TODO: UNDO obj tracking
+	// always inform undo
+	undoableBackspace(true);
 }
 
 void StudentTextEditor::insert(char ch)
 {
-	if (ch == '\t')
-	{
-		m_editRowIter->insert(m_editCol, "    "); // tab case
-		m_editCol += 4;
-	}
-	else
-	{
-		m_editRowIter->insert(m_editCol, 1, ch); // insert 1 inst of ch at editcol
-		++m_editCol;
-	}
-	//TODO: UNDO obj tracking
+	// always inform undo
+	undoableInsert(ch, true);
 }
 
 void StudentTextEditor::enter()
 {
-	// make new line if at the end of a page
-	if (m_editRow == m_lines.size() - 1 && m_editCol == m_editRowIter->size())
-	{
-		m_lines.push_back("");
-		++m_editRow;
-		++m_editRowIter;
-		m_editCol = 0;
-	}
-	// otherwise, make a new line for all chars from col - 1 to end, edit current row
-	else
-	{
-		string nextLine = m_editRowIter->substr(m_editCol, string::npos);
-		*m_editRowIter = m_editRowIter->substr(0, m_editCol);
-
-		// add new line, update row and col counters
-		m_editRowIter = m_lines.emplace(++m_editRowIter, nextLine);
-		++m_editRow;
-		m_editCol = 0;
-	}
-
-	//TODO: UNDO obj tracking
+	// always inform undo
+	undoableEnter(true);
 }
 
 void StudentTextEditor::getPos(int &row, int &col) const
@@ -294,5 +225,173 @@ int StudentTextEditor::getLines(int startRow, int numRows, std::vector<std::stri
 
 void StudentTextEditor::undo()
 {
-	// TODO
+	// get undo info
+	int row, col, count;
+	string text;
+
+	Undo::Action action = getUndo()->get(row, col, count, text);
+
+	// TODO: this will differ because of how get func must differ
+	// apply undo action based on action type
+	switch (action)
+	{
+	case Undo::Action::INSERT:
+		moveCursor(row, col);
+		for (int i = 0; i < text.size(); ++i)
+		{
+			// don't add this insert to undo stack
+			undoableInsert(text[i], false);
+		}
+		moveCursor(row, col); // move cursor back after insertions
+		break;
+	case Undo::Action::DELETE:
+		moveCursor(row, col);
+		for (int i = 0; i < count; ++i)
+		{
+			// don't add this delete to undo stack
+			undoableDel(false);
+		}
+		break;
+	case Undo::Action::SPLIT:
+		moveCursor(row, col);
+		// don't add this enter to undo stack
+		undoableEnter(false);
+		moveCursor(row, col); // enter moves cursor down to next line
+		break;
+	case Undo::Action::JOIN:
+		moveCursor(row, col);
+		// don't add this del to undo stack
+		undoableDel(false);
+
+	case Undo::Action::ERROR:
+		break;
+	}
+}
+
+void StudentTextEditor::moveCursor(int row, int col)
+{
+	std::advance(m_editRowIter, row - m_editRow);
+	m_editRow = row;
+	int numCols = m_editRowIter->size();
+	m_editCol = min(col, numCols);
+}
+
+void StudentTextEditor::undoableDel(bool isUndoable)
+{
+	if (m_editRow == m_lines.size() - 1 && m_editCol == m_editRowIter->size())
+	{
+		return;
+	}
+	// if at end of line, merge with next line
+	else if (m_editCol == m_editRowIter->size())
+	{
+
+		auto nextLine = ++m_editRowIter;
+		--m_editRowIter;
+		*m_editRowIter += *nextLine;
+		m_lines.erase(nextLine);
+
+		if (isUndoable)
+		{
+			getUndo()->submit(Undo::Action::JOIN, m_editRow, m_editCol);
+		}
+	}
+	// otherwise, erase char and inform undo (if asked to)
+	else
+	{
+		char ch = m_editRowIter->at(m_editCol);
+		m_editRowIter->erase(m_editCol, 1);
+
+		if (isUndoable)
+		{
+			getUndo()->submit(Undo::Action::DELETE, m_editRow, m_editCol, ch);
+		}
+	}
+}
+void StudentTextEditor::undoableBackspace(bool isUndoable)
+{
+	// if at top of doc, don't do anything
+	if (m_editRow == 0 && m_editCol == 0)
+	{
+		return;
+	}
+
+	// if at first col, merge with line above
+	else if (m_editCol == 0)
+	{
+		// update row and col trackers
+		auto lineCopy = m_editRowIter;
+		--m_editRowIter;
+		--m_editRow;
+		m_editCol = m_editRowIter->size();
+
+		// merge lines and erase bottom line
+		*m_editRowIter += *lineCopy;
+		m_lines.erase(lineCopy);
+
+		if (isUndoable)
+		{
+			getUndo()->submit(Undo::Action::JOIN, m_editRow, m_editCol);
+		}
+	}
+
+	// else, delete char to left of editCol
+	else
+	{
+		char ch = m_editRowIter->at(m_editCol - 1);
+		m_editRowIter->erase(m_editCol - 1, 1);
+		--m_editCol;
+
+		if (isUndoable)
+		{
+			getUndo()->submit(Undo::Action::DELETE, m_editRow, m_editCol, ch);
+		}
+	}
+}
+void StudentTextEditor::undoableInsert(char ch, bool isUndoable)
+{
+	if (ch == '\t')
+	{
+		m_editRowIter->insert(m_editCol, "    "); // tab case
+		m_editCol += 4;
+	}
+	else
+	{
+		m_editRowIter->insert(m_editCol, 1, ch); // insert 1 inst of ch at editcol
+		++m_editCol;
+	}
+
+	// UNDO obj tracking
+	if (isUndoable)
+	{
+		getUndo()->submit(Undo::Action::INSERT, m_editRow, m_editCol, ch);
+	}
+}
+void StudentTextEditor::undoableEnter(bool isUndoable)
+{
+	// UNDO obj tracking
+	if (isUndoable)
+	{
+		getUndo()->submit(Undo::Action::SPLIT, m_editRow, m_editCol);
+	}
+
+	// make new line if at the end of a page
+	if (m_editRow == m_lines.size() - 1 && m_editCol == m_editRowIter->size())
+	{
+		m_lines.push_back("");
+		++m_editRow;
+		++m_editRowIter;
+		m_editCol = 0;
+	}
+	// otherwise, make a new line for all chars from col - 1 to end, edit current row
+	else
+	{
+		string nextLine = m_editRowIter->substr(m_editCol, string::npos);
+		*m_editRowIter = m_editRowIter->substr(0, m_editCol);
+
+		// add new line, update row and col counters
+		m_editRowIter = m_lines.emplace(++m_editRowIter, nextLine);
+		++m_editRow;
+		m_editCol = 0;
+	}
 }

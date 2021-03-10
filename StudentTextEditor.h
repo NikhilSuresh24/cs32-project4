@@ -29,6 +29,15 @@ private:
 	std::list<std::string>::iterator m_editRowIter; 
 	int m_editRow;
 	int m_editCol;
+
+	void moveCursor(int row, int col);
+	void undoableDel(bool isUndoable);
+	void undoableBackspace(bool isUndoable);
+	void undoableInsert(char ch, bool isUndoable);
+	void undoableEnter(bool isUndoable);
+
+
+
 };
 
 #endif // STUDENTTEXTEDITOR_H_

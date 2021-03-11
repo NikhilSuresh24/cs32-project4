@@ -90,8 +90,7 @@ void StudentTextEditor::move(Dir dir)
 		// if not on first line, move 1 line down
 		if (m_editRow != 0)
 		{
-			--m_editRowIter;
-			--m_editRow;
+			moveCursor(m_editRow - 1, m_editCol);
 		}
 		break;
 
@@ -99,8 +98,7 @@ void StudentTextEditor::move(Dir dir)
 		// increment editRow, unless we are already at the end
 		if (m_editRow != m_lines.size() - 1)
 		{
-			++m_editRowIter;
-			++m_editRow;
+			moveCursor(m_editRow + 1, m_editCol);
 		}
 		break;
 
@@ -149,9 +147,7 @@ void StudentTextEditor::move(Dir dir)
 
 	case HOME:
 		// cursor at first row, first col
-		m_editRowIter = m_lines.begin();
-		m_editCol = 0;
-		m_editRow = 0;
+		moveCursor(0, 0);
 		break;
 
 	case END:
@@ -231,7 +227,6 @@ void StudentTextEditor::undo()
 
 	Undo::Action action = getUndo()->get(row, col, count, text);
 
-	// TODO: this will differ because of how get func must differ
 	// apply undo action based on action type
 	switch (action)
 	{

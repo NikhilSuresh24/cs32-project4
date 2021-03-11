@@ -25,10 +25,12 @@ private:
 	Node *m_root;
 
 	static const char MARKER = '.';
+	inline static const std::string ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ'"; //TODO: can i do this?
 
 	void insert(std::string word);
 	void destroyTrie(Node *root);
 	bool findWord(std::string word);
+	std::vector<Position> splitLine(const std::string &line);
 };
 
 #endif // STUDENTSPELLCHECK_H_

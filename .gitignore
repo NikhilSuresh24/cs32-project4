@@ -2,3 +2,4 @@
 wurd
 *.o
 testFiles/*
+*.txt

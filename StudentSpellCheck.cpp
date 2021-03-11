@@ -47,8 +47,11 @@ bool StudentSpellCheck::load(std::string dictionaryFile)
 			}
 		}
 
-		// add to trie
-		insert(processedLine);
+		// add to trie, if there's something to add
+		if (!processedLine.empty())
+		{
+			insert(processedLine);
+		}
 	}
 
 	// trie created, so return true
@@ -238,7 +241,7 @@ std::vector<SpellCheck::Position> StudentSpellCheck::splitLine(const std::string
 	for (int i = 0; i < line.size(); ++i)
 	{
 		bool inAlphabet = isalpha(line[i]) || line[i] == '\'';
-		
+
 		// if not in alpha or apostrophe, add to word vec
 		if (!inAlphabet)
 		{

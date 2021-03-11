@@ -38,7 +38,7 @@ bool StudentTextEditor::load(std::string file)
 	while (getline(infile, line))
 	{
 		// remove \r from the line
-		if (line[line.size() - 1] == '\r')
+		if (!line.empty() && line[line.size() - 1] == '\r')
 		{
 			line.pop_back();
 		}
@@ -212,7 +212,7 @@ int StudentTextEditor::getLines(int startRow, int numRows, std::vector<std::stri
 	// create copy of iterator to iterate through desired lines
 	int endRow = (m_lines.size() < (startRow + numRows)) ? m_lines.size() : (startRow + numRows);
 	auto rowCopy = m_editRowIter;
-	std::advance(rowCopy, startRow - m_editRow); // get to startRow TODO:is this allowed?
+	std::advance(rowCopy, startRow - m_editRow); // get to startRow 
 
 	// add to lines
 	for (int i = startRow; i < endRow; ++i, ++rowCopy)

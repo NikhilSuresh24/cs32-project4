@@ -16,6 +16,7 @@ StudentUndo::~StudentUndo()
 void StudentUndo::submit(const Action action, int row, int col, char ch)
 {
 	string text;
+	// consider batching only if there are old actions
 	if (!m_actions.empty())
 	{
 		Undoable *top = m_actions.top();

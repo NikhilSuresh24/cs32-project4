@@ -22,7 +22,7 @@ void StudentUndo::submit(const Action action, int row, int col, char ch)
 		bool deleteCond = action == DELETE && top->m_col == col;
 		bool backspaceCond = action == DELETE && top->m_col - 1 == col;
 		bool insertCond = action == INSERT && top->m_col + 1 == col;
-		// if batching, combine two actions
+		// if batching conditions met, combine text and get rid of top
 		if (top->m_action == action && top->m_row == row && (deleteCond || backspaceCond || insertCond))
 		{
 			if (backspaceCond)
@@ -68,7 +68,6 @@ StudentUndo::Action StudentUndo::get(int &row, int &col, int &count, std::string
 		break;
 	case DELETE:
 		inverseAction = INSERT;
-		text = top->m_text;
 		break;
 	case JOIN:
 		inverseAction = SPLIT;
@@ -95,7 +94,7 @@ StudentUndo::Action StudentUndo::get(int &row, int &col, int &count, std::string
 		col = top->m_col;
 	}
 
-	// set text param
+	// set text param, only insert has text
 	if (inverseAction == INSERT)
 	{
 		text = top->m_text;

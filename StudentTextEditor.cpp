@@ -13,13 +13,13 @@ TextEditor *createTextEditor(Undo *un)
 }
 
 StudentTextEditor::StudentTextEditor(Undo *undo)
-	: TextEditor(undo), m_lines({""}), m_editRowIter(m_lines.begin()), m_editRow(0), m_editCol(0) //TODO: if this doesn't work, just declare m_lines and iter in body
+	: TextEditor(undo), m_lines({""}), m_editRowIter(m_lines.begin()), m_editRow(0), m_editCol(0)
 {
 }
 
 StudentTextEditor::~StudentTextEditor()
 {
-	m_lines.clear();
+	reset();
 }
 
 bool StudentTextEditor::load(std::string file)
@@ -42,6 +42,8 @@ bool StudentTextEditor::load(std::string file)
 		{
 			line.pop_back();
 		}
+
+		// add to text list
 		m_lines.push_back(line);
 	}
 
@@ -63,9 +65,10 @@ bool StudentTextEditor::save(std::string file)
 		return false;
 	}
 
+	// save each line
 	for (auto it = m_lines.begin(); it != m_lines.end(); ++it)
 	{
-		outfile << *it << endl; // TODO: make sure this adds newline to end of file
+		outfile << *it << endl;
 	}
 
 	return true;
@@ -73,6 +76,7 @@ bool StudentTextEditor::save(std::string file)
 
 void StudentTextEditor::reset()
 {
+	// clear lines and reset cursor
 	m_lines.clear();
 	m_editRowIter = m_lines.begin();
 	m_editRow = 0;
@@ -216,6 +220,7 @@ int StudentTextEditor::getLines(int startRow, int numRows, std::vector<std::stri
 		lines.push_back(*rowCopy);
 	}
 
+	// return num lines copied
 	return endRow - startRow;
 }
 
@@ -273,6 +278,7 @@ void StudentTextEditor::moveCursor(int row, int col)
 
 void StudentTextEditor::undoableDel(bool isUndoable)
 {
+	// can't delete at EOF
 	if (m_editRow == m_lines.size() - 1 && m_editCol == m_editRowIter->size())
 	{
 		return;
@@ -345,6 +351,7 @@ void StudentTextEditor::undoableBackspace(bool isUndoable)
 }
 void StudentTextEditor::undoableInsert(char ch, bool isUndoable)
 {
+	// add char depending on value (tab separate case)
 	if (ch == '\t')
 	{
 		m_editRowIter->insert(m_editCol, "    "); // tab case

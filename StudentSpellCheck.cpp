@@ -50,6 +50,7 @@ bool StudentSpellCheck::load(std::string dictionaryFile)
 		// add to trie
 		insert(processedLine);
 	}
+
 	// trie created, so return true
 	return true;
 }
@@ -72,6 +73,7 @@ bool StudentSpellCheck::spellCheck(std::string word, int max_suggestions, std::v
 		string wordCopy = word;
 		for (int letter = 0; letter < ALPHABET.size(); ++letter)
 		{
+			// determine capitalization of char replacement
 			if (isupper(wordCopy[ch]))
 			{
 				wordCopy[ch] = toupper(ALPHABET[letter]);
@@ -80,6 +82,7 @@ bool StudentSpellCheck::spellCheck(std::string word, int max_suggestions, std::v
 			{
 				wordCopy[ch] = tolower(ALPHABET[letter]);
 			}
+			// if modified word in trie, add to suggestions
 			if (findWord(wordCopy))
 			{
 				suggestions.push_back(wordCopy);
@@ -93,6 +96,7 @@ bool StudentSpellCheck::spellCheck(std::string word, int max_suggestions, std::v
 		}
 	}
 
+	// misspelled word, so ret false
 	return false;
 }
 
@@ -100,12 +104,15 @@ void StudentSpellCheck::spellCheckLine(const std::string &line, std::vector<Spel
 {
 	problems.clear();
 
+	// get vector of all word positions
 	vector<SpellCheck::Position> wordPoses = splitLine(line);
 
+	// check if each word is in trie
 	for (auto it = wordPoses.begin(); it != wordPoses.end(); ++it)
 	{
 		int length = it->end - it->start + 1;
 		std::string word = line.substr(it->start, length);
+		// if word not in trie, add to problems
 		if (!findWord(word))
 		{
 			problems.push_back(*it);
@@ -226,12 +233,16 @@ std::vector<SpellCheck::Position> StudentSpellCheck::splitLine(const std::string
 	vector<Position> words;
 	int invalidPos = -1;
 	int start = invalidPos;
+
+	// loop over line
 	for (int i = 0; i < line.size(); ++i)
 	{
 		bool inAlphabet = isalpha(line[i]) || line[i] == '\'';
-		char letter = toupper(line[i]);
+		
+		// if not in alpha or apostrophe, add to word vec
 		if (!inAlphabet)
 		{
+			// only make word pos if valid alpha chars before
 			if (start != invalidPos)
 			{
 				int end = i - 1;
@@ -244,6 +255,7 @@ std::vector<SpellCheck::Position> StudentSpellCheck::splitLine(const std::string
 		}
 		else
 		{
+			// if alpha/apostrophe char and no alpha chars since last word, set start
 			if (start == invalidPos)
 			{
 				start = i;

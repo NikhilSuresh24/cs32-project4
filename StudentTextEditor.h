@@ -35,9 +35,6 @@ private:
 	void undoableBackspace(bool isUndoable);
 	void undoableInsert(char ch, bool isUndoable);
 	void undoableEnter(bool isUndoable);
-
-
-
 };
 
 #endif // STUDENTTEXTEDITOR_H_
